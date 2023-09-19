@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const connection = require('./db.js').connection
+const connection = require('./db/db.js').connection
 
 // .......... Session ........
 const {checkUser, sessionHandler, cookieParser} = require('./session.js')

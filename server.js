@@ -3,7 +3,7 @@ const app = express()
 const port = 3000
 const path = require('path')
 const api = require('./api.js')
-const connection = require('./db.js').connection
+const connection = require('./db/db.js').connection
 
 
 // .......... Session ........
