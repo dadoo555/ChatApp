@@ -20,39 +20,50 @@ router.get('/account/name',(req,res)=>{
 
 
 router.get('/chats', checkUser,(req,res)=>{
-    res.status(200).json(
-    [{
-        name: "Renan",
-        lastmessage: "combinamos entao",
-        picture: "x",
-        id: "123"
-    },
-    {
-        name: "Susi",
-        lastmessage: "Bis gleich",
-        picture: "x" ,
-        id: "124"
-    }])
+    
+    //Chats List
+    const sqlQuery =    `SELECT c.id, u2.name, u2.profile_picture
+                        FROM chats c
+                        JOIN participations p1
+                            ON p1.chat_id = c.id
+                        JOIN participations p2
+                            ON p2.chat_id = c.id
+                        JOIN users u2
+                            ON u2.id = p2.user_id
+                        WHERE p1.user_id = '${req.session.user.id}' and p2.user_id != '${req.session.user.id}'`
+
+    connection.promise().query(sqlQuery).then((results)=>{
+        const [data] = results
+        res.status(200).json(data)
+    }).catch(err=>{
+        res.status(401).json({status: 'DB Error'})
+    })
+
 })
 
 router.get('/chats/:id/messages',(req,res)=>{
-    if (req.params.id == 123){
-        res.status(200).json({
-            name: "Renan",
-            picture: "x",
-            messages: ["mensagens renan 1", 
-                        "mensagens renan 2"]
-            }
-        )
-    } else {
-        res.status(200).json({
-            name: "Susi",
-            picture: "x",
-            messages: ["mensagens susi 1", 
-                        "mensagens susi 2"]
-            }
-        )
-    }
+    
+    const sqlQuery =    `SELECT * FROM messages
+                         WHERE chat_id = '${req.params.id}'`
+    connection.promise().query(sqlQuery).then((results)=>{
+        const [data] = results
+        res.status(200).json(data)
+    }).catch(err=>{
+        res.status(500).json({status: 'Error DB messages'})
+    })
+})
+
+router.post('/chats/:id/messages/new', (req,res)=>{
+
+    sqlQuery = `INSERT INTO messages
+                    (chat_id, sender_id, text)
+                VALUES
+                    ('${req.body.data.chat_id}', '${req.body.data.sender_id}', '${req.body.data.text}')`
+    connection.promise().query(sqlQuery).then(()=>{
+        res.status(200).json({status: 'New message sended'})
+    }).catch(err=>{
+        res.status(500).json({status: 'Error DB new message'})
+    })
 })
 
 router.post('/sessions',(req,res)=>{
@@ -76,6 +87,8 @@ router.post('/sessions',(req,res)=>{
             //Wrong password
             res.status(401).json({status: 'User found, wrong password'})
         }
+    }).catch(err =>{
+        res.status(401).json({status: 'DB Error'})
     })
 })
 
