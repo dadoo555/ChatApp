@@ -22,7 +22,7 @@ router.get('/account/name',(req,res)=>{
 router.get('/chats', checkUser,(req,res)=>{
     
     //Chats List
-    const sqlQuery =    `SELECT c.id, u2.name, u2.profile_picture
+    const sqlChats =    `SELECT c.id, u2.name, u2.profile_picture, SUBSTRING(m.text, 1, 30) as lastmessage, m.creation_time
                         FROM chats c
                         JOIN participations p1
                             ON p1.chat_id = c.id
@@ -30,9 +30,13 @@ router.get('/chats', checkUser,(req,res)=>{
                             ON p2.chat_id = c.id
                         JOIN users u2
                             ON u2.id = p2.user_id
-                        WHERE p1.user_id = '${req.session.user.id}' and p2.user_id != '${req.session.user.id}'`
+                        JOIN (SELECT * FROM messages
+                            WHERE id in (SELECT max(id) FROM messages group by chat_id)) m
+                            ON p1.user_id = m.sender_id and p1.chat_id = m.chat_id
+                        WHERE p1.user_id = '${req.session.user.id}' and p2.user_id != '${req.session.user.id}'
+                        ORDER BY m.creation_time DESC`
 
-    connection.promise().query(sqlQuery).then((results)=>{
+    connection.promise().query(sqlChats).then((results)=>{
         const [data] = results
         res.status(200).json(data)
     }).catch(err=>{
