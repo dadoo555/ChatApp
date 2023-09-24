@@ -54,3 +54,23 @@
     background-color: white;
     justify-content: start;
 }
+
+.label-date-chat {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(209, 209, 209);
+    border-radius: 5px;
+    padding: 3px 7px 3px 7px;
+    margin: 5px 0 5px 0;
+    font-size: 0.9rem;
+    
+}
+
+.label-date-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin: 5px 50px 0 50px;
+    justify-content: center;
+}

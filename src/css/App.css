@@ -15,4 +15,147 @@ body {
     background-color: white;
     width: 100vw;
     height: 100vh;
+    display: flex;
+    justify-content: center;
+}
+
+#form-login {
+    width: 450px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-family: 'Fira Sans', sans-serif;
+}
+
+#form-login label {
+    margin: 0 0 5px 0;
+    color: rgb(78, 78, 78);
+    font-size: 0.9rem;
+}
+
+#form-login input {
+    height: 30px;
+    width: calc(100% -6px);
+    margin: 0 0 15px 0;
+    background-color: white;
+    border-radius: 5px;
+    border-color: black;
+    border-width: 1px;
+}
+
+#form-login button {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 34px;
+    border-radius: 5px;
+    background-color: rgb(0, 95, 0);
+    color: white;
+    border-style: none;
+    cursor: pointer;
+    font-family: 'Fira Sans', sans-serif;
+}
+
+#form-login p {
+    font-size: 0.8rem;
+    margin: 10px 0 10px 0;
+}
+
+#form-login hr {
+    width: 100%;
+    margin: 20px 0 0 0;
+}
+
+#btn-register {
+    background-color: rgb(58, 178, 58);
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 34px;
+    border-radius: 5px;
+    color: white;
+    border-style: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+#structure-register {
+    background-color: white;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+}
+
+#form-register {
+    width: 450px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-family: 'Fira Sans', sans-serif;
+}
+
+#form-register label {
+    margin: 0 0 5px 0;
+    color: rgb(78, 78, 78);
+    font-size: 0.9rem;
+}
+
+#form-register input {
+    height: 30px;
+    width: calc(100% -6px);
+    margin: 0 0 15px 0;
+    background-color: white;
+    border-radius: 5px;
+    border-color: black;
+    border-width: 1px;
+}
+
+#form-register hr {
+    width: 100%;
+    margin: 20px 0 0 0;
+}
+
+#form-register p {
+    font-size: 0.8rem;
+    margin: 10px 0 10px 0;
+}
+
+#form-register button {
+    background-color: rgb(0, 95, 0);
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 34px;
+    border-radius: 5px;
+    color: white;
+    border-style: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.btn-login {
+    background-color: rgb(58, 178, 58);
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 34px;
+    border-radius: 5px;
+    color: white;
+    border-style: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.btn-fileupload{
+    margin: 0 0 15px 0 !important;
 }

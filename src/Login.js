@@ -6,6 +6,10 @@ const Login = ()=>{
     const [password, setPassword] = useState('')
     const navigate = useNavigate()
     
+    const gotoRegister = ()=>{
+        navigate('/users/create')
+    }
+
     const onLoginClick = (e)=>{
         e.preventDefault()
         const data = Array.from(e.target.elements)
@@ -30,6 +34,8 @@ const Login = ()=>{
         })
     }
 
+   
+
     return(
         <div id="structure-login">
             <form id="form-login" method="POST" onSubmit={onLoginClick}>
@@ -39,15 +45,18 @@ const Login = ()=>{
                         value={username} 
                         onChange={(e) => setUsername(e.currentTarget.value)} 
                         type="text"
-                        placeholder="User"></input>
+                        placeholder="Username..."></input>
                 <label htmlFor="password">Password</label>
                 <input  name="password" 
                         id="password"
                         value={password} 
                         onChange={(e) => setPassword(e.currentTarget.value)} 
                         type="password"
-                        placeholder=""></input>
-                <button type="submit">Login</button>
+                        placeholder="Password..."></input>
+                <button type="submit"><b>Sign In</b></button>
+                <hr/>
+                <p>Not a member? Register here</p>
+                <div id="btn-register" onClick={gotoRegister}><b>Register</b></div>
             </form>
         </div>
     )

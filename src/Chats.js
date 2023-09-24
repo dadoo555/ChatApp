@@ -6,12 +6,27 @@ import { useNavigate } from 'react-router-dom'
 function ChatListItem (props){
     let source = `/public/images/profil/${props.picture}`
 
+    //format date
     const date = new Date(props.lastmessagetime)
-    let h = date.getHours()
-    h = ("0" + h).slice(-2);
-    let m = date.getMinutes()
-    m = ("0" + m).slice(-2);
-    const time = h + ':' + m
+    const dateDay = date.getDate()
+    const dateMonth = date.getMonth() + 1
+    const dateYear = date.getFullYear()
+    const todayDate = new Date()
+    const todayDay = todayDate.getDate()
+    const todayMonth = todayDate.getMonth() + 1
+    const todayYear = todayDate.getFullYear()
+    let time = ''
+
+    if (dateDay === todayDay && dateMonth === todayMonth && dateYear === todayYear){
+        //today
+        time = ("0" + date.getHours()).slice(-2) + ':' + ("0" + date.getMinutes()).slice(-2)
+    } else if (dateDay + 1 === todayDay){
+        //yesterday
+        time = ' Yesterday'
+    } else {
+        //other date
+        time = dateDay + '/' + dateMonth + '/' + dateYear
+    }
 
     return (
         <div onClick={props.onSelected} className='chatlist-box'>
@@ -27,23 +42,27 @@ function ChatListItem (props){
 
 function ChatList (props){
     const data = props.chats
-    const listItems = []
-    data.forEach((item)=>{
-        const chooseCurrentItem = ()=>{
-            props.changeCurrentChat(item)
-        }
-
-        listItems.push(<ChatListItem    
-                            name={item.name} 
-                            lastmessage={item.lastmessage}
-                            picture={item.profile_picture}
-                            onSelected={chooseCurrentItem}
-                            lastmessagetime={item.creation_time}
-                        ></ChatListItem>)
-    })
+    
+    const listChats = (
+        data.map((chat)=>{
+            const chooseCurrentItem = ()=>{
+                props.changeCurrentChat(chat)
+            }
+            return(
+                <ChatListItem 
+                    key={chat.id}   
+                    name={chat.name} 
+                    lastmessage={chat.lastmessage}
+                    picture={chat.profile_picture}
+                    onSelected={chooseCurrentItem}
+                    lastmessagetime={chat.creation_time}
+                ></ChatListItem>
+            )
+        })
+    )
     return (
         <ul>
-            <li>{listItems}</li>
+            <li>{listChats}</li>
         </ul>
     )
 }
@@ -68,37 +87,70 @@ function CurrentChatMessageItem(props){
     m = ("0" + m).slice(-2);
     const time = h + ':' + m
 
+    let label = []
+    if (props.datelabel != 'no'){
+        label = <div className="label-date-container">
+                    <div className="label-date-chat">
+                        {props.datelabel}
+                    </div>
+                </div>
+    }
+
     return (
-        <div className={classMsgContainer}>
-            <div className={classMsg}>
-                <p className="msg-text">{props.text}</p>
-                <div className="msg-time">
-                    <p>{time}</p>
+        <li>
+            {label}
+            <div className={classMsgContainer}>
+                <div className={classMsg}>
+                    <p className="msg-text">{props.text}</p>
+                    <div className="msg-time">
+                        <p>{time}</p>
+                    </div>
                 </div>
             </div>
-        </div>
+        </li>
     )
 }
 
 function CurrentChatMessages (props){
     const data = props.msgs
-    const listMsgs = []
-    
-    data.forEach((msg)=>{
-        let msgSender = 'other'
-        if (msg.sender_id == props.currentUserId){msgSender = 'me'}
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+                                    "July", "August", "September", "October", "November", "December"
+                        ]
+    let listMessages = []
+    let lastDay = undefined
 
-        listMsgs.push(<CurrentChatMessageItem 
-                            text={msg.text} 
-                            sender_id={msgSender}
-                            datetime={msg.creation_time}
-                        ></CurrentChatMessageItem>)
+    data.forEach(function(msg, i){
+        
+        //sender id class
+            let msgSender = 'other'
+            if (msg.sender_id == props.currentUserId){msgSender = 'me'}
+
+        //label days
+            let datelabel = []
+            let date = new Date(msg.creation_time)
+            if (i == 0){lastDay = new Date(msg.creation_time)}
+            
+            //first msg
+            if (i == 0){
+                datelabel = date.getDate() + ' ' + monthNames[date.getMonth()] + ' ' + date.getFullYear()
+            } else if (lastDay.getDate() != date.getDate()){
+                datelabel = date.getDate() + ' ' + monthNames[date.getMonth()] + ' ' + date.getFullYear()
+            } else {
+                datelabel = 'no'
+            }
+
+            lastDay = new Date(msg.creation_time)
+        
+        listMessages.push(<CurrentChatMessageItem  text={msg.text} key={msg.id}
+                                                        sender_id={msgSender} datelabel={datelabel} 
+                                                        datetime={msg.creation_time}></CurrentChatMessageItem>)
+        
     })
 
     return (
         <div className='current-chat-box'>
             <ul>
-                {listMsgs}
+                {listMessages}
                 <AlwaysScrollToBottom/>
             </ul>
         </div>
@@ -243,14 +295,22 @@ const Chats = ()=>{
                       newChat.lastmessage = newMessage
                       newChat.creation_time = datetime  
                 const chatIndex = chats.findIndex(c => c.id == currentChat.id)
-                newChats[chatIndex] = newChat
+
+                    //alterar a ordem dos chats
+                    if (chatIndex > 0) {
+                        newChats.splice(chatIndex, 1);
+                        newChats.unshift(newChat);
+                    } else {
+                        newChats[0] = newChat
+                    }
+                
                 setChats(newChats)
 
                 //alterar a messages
                 setMsgs([...msgs, {'sender_id': currentUser.id,'text': newMessage, 'creation_time': datetime}])            
                 setNewMessage('')
                 
-                //scroll bottom
+                
                 
             } else {
                 alert('send new message error')
