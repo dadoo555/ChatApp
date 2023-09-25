@@ -22,7 +22,7 @@ router.get('/account/name',(req,res)=>{
 router.get('/chats', checkUser,(req,res)=>{
     
     //Chats List
-    const sqlChats =    `SELECT c.id, u2.name, u2.profile_picture, SUBSTRING(m.text, 1, 30) as lastmessage, m.creation_time
+    const sqlChats =    `SELECT c.id, u2.name, u2.profile_picture, SUBSTRING(m.text, 1, 30) AS lastmessage, m.creation_time, m2.count AS unread
                         FROM chats c
                         JOIN participations p1
                             ON p1.chat_id = c.id
@@ -31,9 +31,14 @@ router.get('/chats', checkUser,(req,res)=>{
                         JOIN users u2
                             ON u2.id = p2.user_id
                         JOIN (SELECT * FROM messages
-                            WHERE id in (SELECT max(id) FROM messages group by chat_id)) m
-                            ON p1.user_id = m.sender_id and p1.chat_id = m.chat_id
-                        WHERE p1.user_id = '${req.session.user.id}' and p2.user_id != '${req.session.user.id}'
+                            WHERE id in (SELECT max(id) FROM messages GROUP BY chat_id)) m
+                            ON p1.chat_id = m.chat_id
+                        LEFT JOIN ( SELECT chat_id, COUNT(id) as count 
+                                    FROM messages
+                                    WHERE messages.read = '0'  AND sender_id != '${req.session.user.id}'
+                                    GROUP BY 1) m2
+                            ON c.id = m2.chat_id
+                        WHERE p1.user_id = '${req.session.user.id}' AND p2.user_id != '${req.session.user.id}'
                         ORDER BY m.creation_time DESC`
 
     connection.promise().query(sqlChats).then((results)=>{
@@ -67,6 +72,17 @@ router.post('/chats/:id/messages/new', (req,res)=>{
         res.status(200).json({status: 'New message sended'})
     }).catch(err=>{
         res.status(500).json({status: 'Error DB new message'})
+    })
+})
+
+router.put('/chats/:id/messages/:userid/makeread', (req,res)=>{
+    const sqlQuery =   `UPDATE messages m
+                        SET m.read = '1'
+                        WHERE chat_id = '${req.params.id}' and sender_id != '${req.params.userid}'`
+    connection.promise().query(sqlQuery).then((response)=>{
+        res.status(200).json({status: 'Messages read'})
+    }).catch(err =>{
+        res.status(500).json({status: 'Error make message read'})
     })
 })
 

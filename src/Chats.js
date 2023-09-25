@@ -17,6 +17,7 @@ function ChatListItem (props){
     const todayYear = todayDate.getFullYear()
     let time = ''
 
+    //Date time ........
     if (dateDay === todayDay && dateMonth === todayMonth && dateYear === todayYear){
         //today
         time = ("0" + date.getHours()).slice(-2) + ':' + ("0" + date.getMinutes()).slice(-2)
@@ -28,14 +29,25 @@ function ChatListItem (props){
         time = dateDay + '/' + dateMonth + '/' + dateYear
     }
 
+    //Unread msg counter.......
+    let unreadMessages = []
+    if (!props.unreadCounter == 0){
+        unreadMessages = <div className="chatlist-unread">{props.unreadCounter}</div>
+    } else {
+        unreadMessages = <div></div>
+    }
+
     return (
         <div onClick={props.onSelected} className='chatlist-box'>
             <img src={source} className='chatlist-picture'></img>
-            <div>
+            <div className="chatlist-info">
                 <p className='chatlist-name'>{props.name}</p>
                 <p className="chatlist-lastmessage">{props.lastmessage}</p>
             </div>
-            <div className="chatlist-time">{time}</div>
+            <div className="chatlist-data">
+                <div className="chatlist-time">{time}</div>
+                {unreadMessages}
+            </div>
         </div>
     )
 }
@@ -43,23 +55,24 @@ function ChatListItem (props){
 function ChatList (props){
     const data = props.chats
     
-    const listChats = (
-        data.map((chat)=>{
-            const chooseCurrentItem = ()=>{
-                props.changeCurrentChat(chat)
-            }
-            return(
-                <ChatListItem 
-                    key={chat.id}   
-                    name={chat.name} 
-                    lastmessage={chat.lastmessage}
-                    picture={chat.profile_picture}
-                    onSelected={chooseCurrentItem}
-                    lastmessagetime={chat.creation_time}
-                ></ChatListItem>
-            )
-        })
-    )
+    let listChats = []
+    data.forEach((chat)=>{
+        
+        const chooseCurrentItem = ()=>{
+            props.changeCurrentChat(chat)
+        }
+
+        listChats.push(<ChatListItem 
+                            key={chat.id}   
+                            name={chat.name} 
+                            lastmessage={chat.lastmessage}
+                            picture={chat.profile_picture}
+                            onSelected={chooseCurrentItem}
+                            lastmessagetime={chat.creation_time}
+                            unreadCounter={chat.unread}
+                        ></ChatListItem>)
+    })
+       
     return (
         <ul>
             <li>{listChats}</li>
@@ -96,8 +109,19 @@ function CurrentChatMessageItem(props){
                 </div>
     }
 
+    let unreadMessagesLabel = []
+    if (props.notread == 1){
+        unreadMessagesLabel = 
+            <div className="label-date-container">
+                <div className="label-notread">
+                    Unread messages
+                </div>
+            </div>
+    }
+
     return (
         <li>
+            {unreadMessagesLabel}
             {label}
             <div className={classMsgContainer}>
                 <div className={classMsg}>
@@ -114,10 +138,10 @@ function CurrentChatMessageItem(props){
 function CurrentChatMessages (props){
     const data = props.msgs
     const monthNames = ["January", "February", "March", "April", "May", "June",
-                                    "July", "August", "September", "October", "November", "December"
-                        ]
+                                    "July", "August", "September", "October", "November", "December"]
     let listMessages = []
     let lastDay = undefined
+    let notread = undefined
 
     data.forEach(function(msg, i){
         
@@ -140,11 +164,17 @@ function CurrentChatMessages (props){
             }
 
             lastDay = new Date(msg.creation_time)
-        
-        listMessages.push(<CurrentChatMessageItem  text={msg.text} key={msg.id}
-                                                        sender_id={msgSender} datelabel={datelabel} 
-                                                        datetime={msg.creation_time}></CurrentChatMessageItem>)
-        
+
+        //Not read label
+            if (notread == 1){notread = 0}
+            if (msg.read == 0 && notread == undefined ){
+                notread = 1
+            }
+           
+        //PUSH
+        listMessages.push(<CurrentChatMessageItem   text={msg.text} key={msg.id} notread={notread}
+                                                    sender_id={msgSender} datelabel={datelabel} 
+                                                    datetime={msg.creation_time}></CurrentChatMessageItem>)
     })
 
     return (
@@ -239,8 +269,6 @@ const Chats = ()=>{
                 navigate('/login')
             }
         })
-        
-
     }, []);
 
     if (!currentUser){
@@ -256,6 +284,20 @@ const Chats = ()=>{
             return response.json()
         }).then(data =>{
             setMsgs(data)
+        }).then(()=>{
+            return fetch(`/api/chats/${chat.id}/messages/${currentUser.id}/makeread`, {
+                method: 'PUT'    
+            })
+        }).then((response)=>{
+            if (response.ok){
+                //update unread counter on chats state ..........
+                let newChats = [...chats]
+                let newChat = {...chat}
+                      newChat.unread = 0
+                let chatIndex = chats.findIndex(c => c.id == chat.id)
+                newChats[chatIndex] = newChat
+                setChats(newChats)
+            }
         }).catch((err)=>{
             throw err
         })
@@ -290,11 +332,12 @@ const Chats = ()=>{
                 const datetime = new Date().toJSON() 
 
                 // alterar o chatlist
-                const newChats = [...chats]
-                const newChat = {...currentChat}
+                let newChats = [...chats]
+                let newChat = {...currentChat}
                       newChat.lastmessage = newMessage
-                      newChat.creation_time = datetime  
-                const chatIndex = chats.findIndex(c => c.id == currentChat.id)
+                      newChat.creation_time = datetime
+                      newChat.unread = 0  
+                let chatIndex = chats.findIndex(c => c.id == currentChat.id)
 
                     //alterar a ordem dos chats
                     if (chatIndex > 0) {
@@ -307,7 +350,7 @@ const Chats = ()=>{
                 setChats(newChats)
 
                 //alterar a messages
-                setMsgs([...msgs, {'sender_id': currentUser.id,'text': newMessage, 'creation_time': datetime}])            
+                setMsgs([...msgs, {'id': msgs[msgs.length - 1].id + 1,'sender_id': currentUser.id,'text': newMessage, 'creation_time': datetime}])            
                 setNewMessage('')
                 
                 

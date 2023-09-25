@@ -124,11 +124,7 @@
     margin: 0 0 10px 0;
 }
 
-.chatlist-box div{
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-}
+
 
 .chatlist-box:hover {
     background-color: rgb(231, 231, 231);
@@ -155,10 +151,37 @@
     margin: 0 10px 0 10px;
 }
 
+.chatlist-info {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.chatlist-data {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: end;
+    margin: 0 15px 0 0;
+    gap: 5px;
+}
+
+.chatlist-unread {
+    background-color: rgb(1, 117, 1);
+    border-radius: 100%;
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .chatlist-time{
     
     text-align: right;
-    margin: 0 10px 0 0;
+
     font-size: 0.7rem;
 }
 
