@@ -5,7 +5,7 @@ const Register = ()=>{
 
     const navigate = useNavigate()
     const gotoLogin = ()=>{
-        navigate('/login')
+        navigate('/chat/login')
     }
 
     const registerNewUser = (e)=>{

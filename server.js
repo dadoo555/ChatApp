@@ -12,13 +12,13 @@ app.use(sessionHandler)
 app.use(cookieParser())
 
 //............. API ...........
-app.use('/api', api)
+app.use('/chat/api', api)
 
 //............ react ...........
-app.use(express.static('build'))
-app.use('/public', express.static('public'))
+app.use('/chat/', express.static('build'))
+app.use('/chat/public', express.static('public'))
 
-app.get('/*', (req,res)=>{
+app.get('/chat/*', (req,res)=>{
     res.sendFile(path.join(__dirname, "build", "index.html"))
 })
 

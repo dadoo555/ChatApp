@@ -7,7 +7,7 @@ const Login = ()=>{
     const navigate = useNavigate()
     
     const gotoRegister = ()=>{
-        navigate('/users/create')
+        navigate('/chat/users/create')
     }
 
     const onLoginClick = (e)=>{
@@ -15,7 +15,7 @@ const Login = ()=>{
         const data = Array.from(e.target.elements)
             .filter((input) => input.name)
             .reduce((obj, input) => Object.assign(obj, { [input.name]: input.value }), {});
-        fetch('/api/sessions', {
+        fetch('/chat/api/sessions', {
             headers: {
                 Accept: 'application/json',
                 "Content-Type": "application/json"
@@ -25,7 +25,7 @@ const Login = ()=>{
             
         }).then(response =>{
             if (response.ok){
-                navigate('/')
+                navigate('/chat/')
             } else {
                 alert('wrong nickname/password')
             }

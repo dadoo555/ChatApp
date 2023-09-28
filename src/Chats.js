@@ -4,9 +4,9 @@ import './css/Messages.css'
 import { useNavigate } from 'react-router-dom'
 
 function ChatListItem (props){
-    let source = `/public/images/profil/${props.picture}`
+    let source = `/chat/public/images/profil/${props.picture}`
 
-    //format date
+    //format dateapi
     const date = new Date(props.lastmessagetime)
     const dateDay = date.getDate()
     const dateMonth = date.getMonth() + 1
@@ -83,7 +83,7 @@ function ChatList (props){
 }
 
 function CurrentChatMenu (props){
-    let source = `/public/images/profil/${props.currentChat.profile_picture}`
+    let source = `/chat/public/images/profil/${props.currentChat.profile_picture}`
     return (  
         <div className='top-menu-current-chat'>
             <img src={source}></img>
@@ -191,7 +191,7 @@ function CurrentChatMessages (props){
 
 function ChatMenu (props){
 
-    const profilePicture = `/public/images/profil/${props.picture}`
+    const profilePicture = `/chat/public/images/profil/${props.picture}`
     return (
         <div className='menu-chats'>
             <div className="menu-chats-me">
@@ -302,7 +302,7 @@ const Chats = ()=>{
     const navigate = useNavigate()
   
     useEffect(() => { 
-        fetch('/api/sessions/me')
+        fetch('/chat/api/sessions/me')
         .then(response=>{
             if (response.ok){
                 console.log('autorizado')
@@ -313,7 +313,7 @@ const Chats = ()=>{
         }).then((data)=>{
             setCurrentUser(data.user)
         }).then(()=>{
-            return fetch('/api/chats')
+            return fetch('/chat/api/chats')
         }).then(res => {
             return res.json()
         }).then(data => {
@@ -321,7 +321,7 @@ const Chats = ()=>{
             
         }).catch(err =>{
             if (err.message == 'Unauthorized'){
-                navigate('/login')
+                navigate('/chat/login')
             }
         })
     }, []);
@@ -334,13 +334,13 @@ const Chats = ()=>{
         setCurrentChat(chat)
         setNewMessage('')
         
-        fetch(`/api/chats/${chat.id}/messages`)
+        fetch(`/chat/api/chats/${chat.id}/messages`)
         .then(response => {
             return response.json()
         }).then(data =>{
             setMsgs(data)
         }).then(()=>{
-            return fetch(`/api/chats/${chat.id}/messages/${currentUser.id}/read`, {
+            return fetch(`/chat/api/chats/${chat.id}/messages/${currentUser.id}/read`, {
                 method: 'PUT'    
             })
         }).then((response)=>{
@@ -378,7 +378,7 @@ const Chats = ()=>{
             'chat_id': currentChat.id
         }
 
-        fetch(`/api/chats/${currentChat.id}/messages/new`, {
+        fetch(`/chat/api/chats/${currentChat.id}/messages/new`, {
             headers: {
                 Accept: 'application/json',
                 "Content-Type": "application/json"
@@ -434,7 +434,7 @@ const Chats = ()=>{
     const toggleNewChat = ()=>{
         if (showNewChats == false){
 
-            fetch('/api/users').then((res)=>{
+            fetch('/chat/api/users').then((res)=>{
                 return res.json()
             }).then((data)=>{
                 setUsersList(data)
@@ -449,10 +449,10 @@ const Chats = ()=>{
     }
 
     const logoff = () => {
-        fetch('/api/sessions/me/destroy')
+        fetch('/chat/api/sessions/me/destroy')
         .then((response)=>{
             if (response.ok){
-                navigate('/login')
+                navigate('/chat/login')
             }
         }).catch(err =>{
             alert(err)
@@ -460,7 +460,7 @@ const Chats = ()=>{
     }
 
     const goToAccount = () => {
-        navigate('/account')
+        navigate('/chat/account')
     }
 
     

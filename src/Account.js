@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import './css/Account.css'
 
 const Picture = (props)=>{
-    let source = `/public/images/profil/${props.picture}`
+    let source = `/chat/public/images/profil/${props.picture}`
     return(
         <div className="account-picture">
             <img src={source} alt="profile-picture" />
@@ -40,7 +40,7 @@ const Account = () => {
     const [showPassword, setShowPassword] = useState(false)
 
     useEffect(()=>{
-        fetch('/api/sessions/me').then((response)=>{
+        fetch('/chat/api/sessions/me').then((response)=>{
             if (response.ok){
                 return response.json()
             } else {
@@ -50,7 +50,7 @@ const Account = () => {
             setCurrentUser(data.user)
         }).catch(err =>{
             if (err.message == 'Unauthorized'){
-                navigate('/login')
+                navigate('/chat/login')
             }
         })
 
@@ -72,7 +72,7 @@ const Account = () => {
         <div id="structure-account">
             <div id="box-account">
                 <div className="menubar-account">
-                    <div className="btn-account-back" onClick={()=>{navigate('/')}}>&#8592;</div>
+                    <div className="btn-account-back" onClick={()=>{navigate('/chat/')}}>&#8592;</div>
                 </div>
                 <Picture picture={currentUser.profile_picture}/>
                 <AccountData user={currentUser} passwordState={showPassword} togglePassword={togglePassword}/>
