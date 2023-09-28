@@ -38,7 +38,7 @@ function ChatListItem (props){
     }
 
     return (
-        <div onClick={props.onSelected} className='chatlist-box'>
+        <div onClick={props.onSelected} className='chatlist-item'>
             <img src={source} className='chatlist-picture'></img>
             <div className="chatlist-info">
                 <p className='chatlist-name'>{props.name}</p>
@@ -54,7 +54,7 @@ function ChatListItem (props){
 
 function ChatList (props){
     const data = props.chats
-    
+
     let listChats = []
     data.forEach((chat)=>{
         
@@ -74,9 +74,11 @@ function ChatList (props){
     })
        
     return (
-        <ul>
-            <li>{listChats}</li>
-        </ul>
+        <div id="chatlist-box">
+            <ul>
+                <li>{listChats}</li>
+            </ul>
+        </div>
     )
 }
 
@@ -167,7 +169,7 @@ function CurrentChatMessages (props){
 
         //Not read label
             if (notread == 1){notread = 0}
-            if (msg.read == 0 && notread == undefined ){
+            if (msg.read == 0 && notread == undefined && props.currentUserId != msg.sender_id){
                 notread = 1
             }
            
@@ -191,13 +193,18 @@ function ChatMenu (props){
 
     const profilePicture = `/public/images/profil/${props.picture}`
     return (
-        <div className='top-menu-chat'>
-            <div className="myMenuData">
-                <img className="myProfilePicture" src={profilePicture}></img>
+        <div className='menu-chats'>
+            <div className="menu-chats-me">
+                <img className="menu-chats-picture" src={profilePicture}></img>
                 <p>{props.name}</p>
             </div>
-            <div className="btn-newchat">
-                <p>+</p>
+            <div className="menu-chat-buttons">
+                <div className="btn-newchat" onClick={props.btn_newchat}>
+                    <p>+</p>
+                </div>
+                <div className="btn-settings" onClick={props.btn_settings}>
+                    <p>&#65049;</p>
+                </div>
             </div>
         </div>
     )
@@ -210,6 +217,7 @@ function SearchBox (){
         </div>
     )
 }
+
 
 function SendTextBox (props){
     const handlerEnterPress = (e)=>{
@@ -230,11 +238,55 @@ function SendTextBox (props){
     )
 }
 
+const SettingsMenu = (props) => {
+    
+    let menuSettings = {}
+    if (props.show == true){
+        menuSettings = 
+            <div className="menu-settings-list">
+                <div className="menu-settings-item" onClick={props.account}><b>Profile Settings</b></div>
+                <div className="menu-settings-item" onClick={props.logoff}><b>Logout</b></div>
+            </div>
+    } else {
+        menuSettings = <div></div>
+    }
+    
+    return(
+        <div id="menu-settings">
+            {menuSettings}
+        </div>
+    )
+}
+
 const AlwaysScrollToBottom = () => {
     const elementRef = useRef();
     useEffect(() => elementRef.current.scrollIntoView());
     return <div ref={elementRef} />;
-  };
+}
+
+const NewChatList = (props)=>{
+    if (props.show == false){
+        return
+    }
+    
+    let list = []
+    let data = props.usersData
+    data.forEach((user) =>{
+        list.push(
+            <li key={user.id}>
+                {user.name}
+            </li>
+        )
+    }) 
+        
+    return(
+        <div>
+            <ul>
+                {list}
+            </ul>
+        </div>
+    )
+}
 
 // ............... Chats APP ...................
 const Chats = ()=>{
@@ -244,8 +296,11 @@ const Chats = ()=>{
     const [currentChat, setCurrentChat] = useState(undefined)
     const [currentUser, setCurrentUser] = useState(undefined)
     const [newMessage, setNewMessage] = useState(undefined)
+    const [settingsMenu, setSettingsMenu] = useState(false)
+    const [showNewChats, setShowNewChats] = useState(false)
+    const [usersList, setUsersList] = useState([])
     const navigate = useNavigate()
-
+  
     useEffect(() => { 
         fetch('/api/sessions/me')
         .then(response=>{
@@ -285,7 +340,7 @@ const Chats = ()=>{
         }).then(data =>{
             setMsgs(data)
         }).then(()=>{
-            return fetch(`/api/chats/${chat.id}/messages/${currentUser.id}/makeread`, {
+            return fetch(`/api/chats/${chat.id}/messages/${currentUser.id}/read`, {
                 method: 'PUT'    
             })
         }).then((response)=>{
@@ -313,6 +368,10 @@ const Chats = ()=>{
             return
         }
 
+        if (newMessage === ''){
+            return
+        }
+
         const data = {
             'text': newMessage,
             'sender_id': currentUser.id,
@@ -334,7 +393,7 @@ const Chats = ()=>{
                 // alterar o chatlist
                 let newChats = [...chats]
                 let newChat = {...currentChat}
-                      newChat.lastmessage = newMessage
+                      newChat.lastmessage = 'You: ' + newMessage
                       newChat.creation_time = datetime
                       newChat.unread = 0  
                 let chatIndex = chats.findIndex(c => c.id == currentChat.id)
@@ -364,28 +423,101 @@ const Chats = ()=>{
         
     }
 
+    const toggleMenuSettings = ()=>{
+        if (settingsMenu == false){
+            setSettingsMenu(true)
+        } else {
+            setSettingsMenu(false)
+        }
+    }
+
+    const toggleNewChat = ()=>{
+        if (showNewChats == false){
+
+            fetch('/api/users').then((res)=>{
+                return res.json()
+            }).then((data)=>{
+                setUsersList(data)
+            }).catch(err =>{
+                alert(err)
+            })
+
+            setShowNewChats(true)
+        } else {
+            setShowNewChats(false)
+        }
+    }
+
+    const logoff = () => {
+        fetch('/api/sessions/me/destroy')
+        .then((response)=>{
+            if (response.ok){
+                navigate('/login')
+            }
+        }).catch(err =>{
+            alert(err)
+        })
+    }
+
+    const goToAccount = () => {
+        navigate('/account')
+    }
+
+    
     let showCurrentMenu = []
     let showCurrentChat = []
     if (currentChat){
-        showCurrentMenu = <CurrentChatMenu currentChat={currentChat}></CurrentChatMenu>
-    } else {showCurrentMenu = <div className="fake-div-menu"></div>}
+        showCurrentMenu = 
+            <CurrentChatMenu 
+                currentChat={currentChat}
+            ></CurrentChatMenu>
+    } else {
+        showCurrentMenu = <div className="fake-div-menu"></div>
+    }
     
     if (msgs){
-        showCurrentChat= <CurrentChatMessages msgs={msgs} currentUserId={currentUser.id}></CurrentChatMessages>
-    }else {showCurrentChat= <div className="fake-div-messages"></div>}
+        showCurrentChat= 
+            <CurrentChatMessages 
+                msgs={msgs} 
+                currentUserId={currentUser.id}
+            ></CurrentChatMessages>
+    }else {
+        showCurrentChat= <div className="fake-div-messages"></div>
+    }
 
     return (
         <div id='app-structure'>
             <div id='grid-out'>
                 <div id='flexbox-chats'>
-                    <ChatMenu name={currentUser.name} picture={currentUser.profile_picture}></ChatMenu>
+                    <ChatMenu 
+                        name={currentUser.name} 
+                        picture={currentUser.profile_picture} 
+                        btn_newchat={toggleNewChat} 
+                        btn_settings={toggleMenuSettings}
+                    ></ChatMenu>
+                    <SettingsMenu 
+                        show={settingsMenu} 
+                        logoff={logoff} 
+                        account={goToAccount}
+                    ></SettingsMenu>
+                    <NewChatList
+                        show={showNewChats} 
+                        usersData={usersList}   
+                    ></NewChatList>
                     <SearchBox/>
-                    <ChatList chats={chats} changeCurrentChat={changeCurrentChat}></ChatList>
+                    <ChatList 
+                        chats={chats} 
+                        changeCurrentChat={changeCurrentChat}
+                    ></ChatList>
                 </div>
                 <div id='flexbox-current-chat'>
                     {showCurrentMenu}
                     {showCurrentChat}
-                    <SendTextBox value={newMessage} changeEvent={handleChangeNewMessage} fSend={sendNewMessage}></SendTextBox>
+                    <SendTextBox 
+                        value={newMessage} 
+                        changeEvent={handleChangeNewMessage} 
+                        fSend={sendNewMessage}
+                    ></SendTextBox>
                 </div>
             </div>
         </div>

@@ -14,10 +14,20 @@ router.get('/', (req,res)=>{
     res.send('api page')
 })
 
-router.get('/account/name',(req,res)=>{
-    res.status(200).json({name: 'Eduardo'})
+router.get('/users', (req,res)=>{
+    
+    if (!req.session.user.id){
+        res.status(401).json({status: 'unauthorized'})
+    }
+    const sqlQuery =   `SELECT id, name, profile_picture, status
+                        FROM users WHERE id != '${req.session.user.id}'`
+    connection.promise().query(sqlQuery).then((results)=>{
+        const [data] = results
+        res.status(200).json(data)
+    }).catch(err=>{
+        res.status(500).json({status: 'Error DB users list'})
+    })
 })
-
 
 router.get('/chats', checkUser,(req,res)=>{
     
@@ -75,7 +85,7 @@ router.post('/chats/:id/messages/new', (req,res)=>{
     })
 })
 
-router.put('/chats/:id/messages/:userid/makeread', (req,res)=>{
+router.put('/chats/:id/messages/:userid/read', (req,res)=>{
     const sqlQuery =   `UPDATE messages m
                         SET m.read = '1'
                         WHERE chat_id = '${req.params.id}' and sender_id != '${req.params.userid}'`
@@ -117,6 +127,15 @@ router.get('/sessions/me', (req,res)=>{
         res.status(200).json({user: req.session.user})
     } else {
         res.status(401).json({status: 'unauthorized'})
+    }
+})
+
+router.get('/sessions/me/destroy', (req,res)=>{
+    if (req.session){
+        req.session.destroy()
+        res.status(200).json({status: 'Logoff ok'})
+    } else {
+        res.status(401).json({status: 'No user to logoff'})
     }
 })
 
