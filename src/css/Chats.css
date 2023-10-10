@@ -180,6 +180,13 @@
     margin: 0 10px 0 10px;
 }
 
+.newchat-box h1 {
+    font-size: 0.8rem;
+    margin: 0 0 5px 10px;
+    color: rgb(92, 92, 92);
+
+}
+
 #chatlist-box {
     overflow-x: hidden;
     overflow-y: auto;
@@ -198,6 +205,13 @@
 
 .chatlist-item:hover {
     background-color: rgb(231, 231, 231);
+}
+
+.selected_chat {
+    height: 100%;
+    width: 5px;
+    background-color: rgb(113, 113, 113);
+    flex: none;
 }
 
 .chatlist-name {
@@ -320,3 +334,8 @@ ul {
     list-style-type: none;
 }
 
+@media (max-width: 600px){
+    body {
+        background-color: red;
+    }
+}

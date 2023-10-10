@@ -37,6 +37,13 @@ function ChatListItem (props){
         unreadMessages = <div></div>
     }
 
+    //chat selected marker ...
+    let selectedChat = []
+    if (props.isSelected){
+        selectedChat = <ChatSelectedTag/>
+    }
+
+
     return (
         <div onClick={props.onSelected} className='chatlist-item'>
             <img src={source} className='chatlist-picture'></img>
@@ -48,7 +55,15 @@ function ChatListItem (props){
                 <div className="chatlist-time">{time}</div>
                 {unreadMessages}
             </div>
+            {selectedChat}
         </div>
+    )
+}
+
+function ChatSelectedTag (){
+
+    return(
+        <div className="selected_chat"></div>
     )
 }
 
@@ -62,17 +77,25 @@ function ChatList (props){
             props.changeCurrentChat(chat)
         }
 
+        let isSelectedValue = undefined
+        if (props.currentChatID){
+            if (props.currentChatID.id == chat.id){
+                isSelectedValue = true
+            }    
+        }
+        
         listChats.push(<ChatListItem 
                             key={chat.id}   
-                            name={chat.name} 
+                            name={chat.name}
                             lastmessage={chat.lastmessage}
                             picture={chat.profile_picture}
                             onSelected={chooseCurrentItem}
                             lastmessagetime={chat.creation_time}
                             unreadCounter={chat.unread}
+                            isSelected={isSelectedValue}
                         ></ChatListItem>)
     })
-       
+               
     return (
         <div id="chatlist-box">
             <ul>
@@ -264,6 +287,7 @@ const AlwaysScrollToBottom = () => {
     return <div ref={elementRef} />;
 }
 
+
 const NewChatList = (props)=>{
     if (props.show == false){
         return
@@ -271,16 +295,29 @@ const NewChatList = (props)=>{
     
     let list = []
     let data = props.usersData
+    let source = []
     data.forEach((user) =>{
+        source = `/chat/public/images/profil/${user.profile_picture}`
+        let onclick = ()=>{
+            props.onNewChatClick(user)
+        }
         list.push(
             <li key={user.id}>
-                {user.name}
+                <div className='chatlist-item' onClick={onclick}>
+                    <img src={source} className='chatlist-picture'></img>
+                    <div className="chatlist-info">
+                        <p className='chatlist-name'>{user.name}</p>
+                        
+                    </div>
+                    
+                </div>
             </li>
         )
     }) 
         
     return(
-        <div>
+        <div className="newchat-box">
+            <h1>New conversation...</h1>
             <ul>
                 {list}
             </ul>
@@ -300,39 +337,137 @@ const Chats = ()=>{
     const [showNewChats, setShowNewChats] = useState(false)
     const [usersList, setUsersList] = useState([])
     const navigate = useNavigate()
-  
+    
     useEffect(() => { 
-        fetch('/chat/api/sessions/me')
-        .then(response=>{
-            if (response.ok){
-                console.log('autorizado')
-                return response.json()
-            } else {
-                throw new Error('Unauthorized')
-            }
-        }).then((data)=>{
-            setCurrentUser(data.user)
-        }).then(()=>{
-            return fetch('/chat/api/chats')
-        }).then(res => {
-            return res.json()
-        }).then(data => {
-            setChats(data)
-            
-        }).catch(err =>{
-            if (err.message == 'Unauthorized'){
-                navigate('/chat/login')
-            }
-        })
+
+        const updateChat = ()=>{
+
+            fetch('/chat/api/sessions/me')
+            .then(response=>{
+                if (response.ok){
+                    console.log('autorizado')
+                    return response.json()
+                } else {
+                    throw new Error('Unauthorized')
+                }
+            }).then((data)=>{
+                setCurrentUser(data.user)
+            }).then(()=>{
+                return fetch('/chat/api/chats')
+            }).then(res => {
+                return res.json()
+            }).then(data => {
+                setChats(data)
+                
+            }).catch(err =>{
+                if (err.message == 'Unauthorized'){
+                    navigate('/chat/login')
+                }
+            })
+        }
+
+        const autoUpdate = ()=>{ 
+            updateChat()
+            setTimeout(autoUpdate, 10000)
+        }
+        
+        const startAutoUpdate = autoUpdate()
+        
     }, []);
+
+
+
+
+
+
+    // useEffect(() => { 
+    //     fetch('/chat/api/sessions/me')
+    //     .then(response=>{
+    //         if (response.ok){
+    //             console.log('autorizado')
+    //             return response.json()
+    //         } else {
+    //             throw new Error('Unauthorized')
+    //         }
+    //     }).then((data)=>{
+    //         setCurrentUser(data.user)
+    //     }).then(()=>{
+    //         return fetch('/chat/api/chats')
+    //     }).then(res => {
+    //         return res.json()
+    //     }).then(data => {
+    //         setChats(data)
+            
+    //     }).catch(err =>{
+    //         if (err.message == 'Unauthorized'){
+    //             navigate('/chat/login')
+    //         }
+    //     })
+    // }, []);
 
     if (!currentUser){
         return <div></div>
     }
 
+
+    const addNewChat = (user)=>{
+        
+        let chat_data = {
+            currentUserId: currentUser.id,
+            otherUserId: user.id
+        }
+
+        //criar novos registros na DB
+        fetch('/chat/api/chats/new', {
+            headers: {
+                Accept: 'application/json',
+                "Content-Type": "application/json"
+            },
+            method: 'POST',
+            body: JSON.stringify({chat_data})
+        }).then(response => {
+            if (response.ok){
+                return response.json()
+            } else {
+                alert('Error new chat')
+            }
+
+        }).then((results)=>{
+
+            const lastid = results.chat_id
+            
+            //alterar o chatlist
+            let newChats = [...chats]
+            let newChat = {}
+                newChat.id = lastid
+                newChat.name = user.name
+                newChat.profile_picture = user.profile_picture 
+                newChat.lastmessage = ''
+                newChat.creation_time = new Date()
+                newChat.unread = 0
+            newChats.unshift(newChat)
+            setChats(newChats)
+
+            //remover do newUsersList
+            let newUsersList = [...usersList]
+            let usersIndex = newUsersList.findIndex(u => u.id == user.id)
+
+            newUsersList.splice(usersIndex, 1)
+
+            setUsersList(newUsersList)
+            setShowNewChats(false)
+            setCurrentChat(newChat)
+            setNewMessage('')
+
+        }).catch(err=>{
+            throw err
+            setShowNewChats(false)
+        })
+    }
+
     const changeCurrentChat = (chat)=>{
         setCurrentChat(chat)
-        setNewMessage('')
+        setNewMessage('')   
         
         fetch(`/chat/api/chats/${chat.id}/messages`)
         .then(response => {
@@ -352,10 +487,12 @@ const Chats = ()=>{
                 let chatIndex = chats.findIndex(c => c.id == chat.id)
                 newChats[chatIndex] = newChat
                 setChats(newChats)
+                
             }
         }).catch((err)=>{
             throw err
         })
+
     }
 
     const handleChangeNewMessage = (value)=>{
@@ -409,7 +546,11 @@ const Chats = ()=>{
                 setChats(newChats)
 
                 //alterar a messages
-                setMsgs([...msgs, {'id': msgs[msgs.length - 1].id + 1,'sender_id': currentUser.id,'text': newMessage, 'creation_time': datetime}])            
+                if (msgs[msgs.length - 1]){
+                    setMsgs([...msgs, {'id': msgs[msgs.length - 1].id + 1,'sender_id': currentUser.id,'text': newMessage, 'creation_time': datetime}])            
+                } else {
+                    setMsgs([...msgs, {'id': '0','sender_id': currentUser.id,'text': newMessage, 'creation_time': datetime}])     
+                }
                 setNewMessage('')
                 
                 
@@ -426,6 +567,7 @@ const Chats = ()=>{
     const toggleMenuSettings = ()=>{
         if (settingsMenu == false){
             setSettingsMenu(true)
+            setShowNewChats(false)
         } else {
             setSettingsMenu(false)
         }
@@ -443,6 +585,7 @@ const Chats = ()=>{
             })
 
             setShowNewChats(true)
+            setSettingsMenu(false)
         } else {
             setShowNewChats(false)
         }
@@ -463,7 +606,6 @@ const Chats = ()=>{
         navigate('/chat/account')
     }
 
-    
     let showCurrentMenu = []
     let showCurrentChat = []
     if (currentChat){
@@ -502,12 +644,14 @@ const Chats = ()=>{
                     ></SettingsMenu>
                     <NewChatList
                         show={showNewChats} 
-                        usersData={usersList}   
+                        usersData={usersList}
+                        onNewChatClick={addNewChat}   
                     ></NewChatList>
                     <SearchBox/>
                     <ChatList 
                         chats={chats} 
                         changeCurrentChat={changeCurrentChat}
+                        currentChatID={currentChat}
                     ></ChatList>
                 </div>
                 <div id='flexbox-current-chat'>

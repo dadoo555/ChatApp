@@ -19,8 +19,21 @@ router.get('/users', (req,res)=>{
     if (!req.session.user.id){
         res.status(401).json({status: 'unauthorized'})
     }
-    const sqlQuery =   `SELECT id, name, profile_picture, status
-                        FROM users WHERE id != '${req.session.user.id}'`
+    const sqlQuery =   
+        `SELECT id, name, profile_picture
+        FROM users
+        WHERE name NOT IN 
+            (SELECT u2.name
+                FROM chats c
+                JOIN participations p1
+                    ON p1.chat_id = c.id
+                JOIN participations p2
+                    ON p2.chat_id = c.id
+                JOIN users u2
+                    ON u2.id = p2.user_id
+                WHERE p1.user_id = '${req.session.user.id}' 
+                AND p2.user_id != '${req.session.user.id}'
+        ORDER BY u2.name) AND id != '${req.session.user.id}'`
     connection.promise().query(sqlQuery).then((results)=>{
         const [data] = results
         res.status(200).json(data)
@@ -40,7 +53,7 @@ router.get('/chats', checkUser,(req,res)=>{
                             ON p2.chat_id = c.id
                         JOIN users u2
                             ON u2.id = p2.user_id
-                        JOIN (SELECT * FROM messages
+                        LEFT JOIN (SELECT * FROM messages
                             WHERE id in (SELECT max(id) FROM messages GROUP BY chat_id)) m
                             ON p1.chat_id = m.chat_id
                         LEFT JOIN ( SELECT chat_id, COUNT(id) as count 
@@ -59,6 +72,38 @@ router.get('/chats', checkUser,(req,res)=>{
     })
 
 })
+
+router.post('/chats/new',(req,res)=>{
+    const sqlQueryInsert = `INSERT INTO chats VALUES ();`
+    const sqlLastId = `SELECT last_insert_id() AS lastid;`
+    let chat_id = []
+
+    connection.promise().query(sqlQueryInsert).then(()=>{
+        return connection.promise().query(sqlLastId)
+    }).then((data)=>{
+        chat_id = data[0][0].lastid
+
+        return connection.promise().query(
+           `INSERT INTO participations
+                (chat_id, user_id)
+            VALUES 
+                ('${chat_id}', '${req.body.chat_data.currentUserId}'),('${chat_id}', '${req.body.chat_data.otherUserId}')`
+        )        
+    }).then(() =>{
+        res.status(200).json({status: 'New chat added', chat_id: chat_id})
+    }).catch(err =>{
+        res.status(500).json({status: 'Error add new chat: ' + err})
+    })
+})
+
+// router.get('/chats/lastcreated', (req,res)=>{
+//     const sqlLastId = `SELECT last_insert_id() AS lastid;`
+//     connection.promise().query(sqlLastId).then((results)=>{
+//         res.status(200).json(results)
+//     }).catch(err=>{
+//         res.status(500).json({status: 'Error get last created id chat'})
+//     })
+// })
 
 router.get('/chats/:id/messages',(req,res)=>{
     
