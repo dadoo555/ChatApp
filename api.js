@@ -1,6 +1,22 @@
 const express = require('express')
 const router = express.Router()
 const connection = require('./db/db.js').connection
+const multer = require('multer')
+const upload = 
+    multer({storage: multer.diskStorage({
+            destination: function(req, file, callback){
+                callback(null, __dirname + '/public/images/profil/')
+            },
+            filename: function(req, file, callback){
+                callback(null, file.originalname)
+            }
+        }),
+        limits: {
+            files: 1,
+            fieldNameSize: 300,
+            fileSize: 1048576
+        }
+    })
 
 const bodyParser = require('body-parser')
 const urlEncodedParser = bodyParser.urlencoded({ extended: false })
@@ -46,18 +62,17 @@ router.get('/users', (req,res)=>{
     })
 })
 
-router.post('/users/new', (req,res)=>{
-    console.log(req.body)
+router.post('/users/new', upload.single('picture'), (req,res)=>{
+console.log(req.files)
+console.log(req.body)
     const sqlUsers = `SELECT nickname FROM users`
     const sqlQuery =    
-        `INSERT INTO users
-            (nickname, name, password, profile_picture, status)
-        VALUES
-            ('${req.body.data.nickname}','${req.body.data.name}','${req.body.data.password}','${req.body.data.picture.name}','Free to chat')`
+        `INSERT INTO users (nickname, name, password, profile_picture, status)
+        VALUES ('${req.body.nickname}','${req.body.name}','${req.body.password}','${req.body.picturename}','Free to chat')`
                  
     connection.promise().query(sqlUsers).then((results)=>{
         const [nicknames] = results
-        const matchedNickname = nicknames.find(each=> each.toUpperCase() === req.body.data.nickname.toUpperCase())
+        const matchedNickname = nicknames.find(each=> each.nickname.toUpperCase() === req.body.nickname.toUpperCase())
         if(matchedNickname){
             throw new Error("EXISTING_NICKNAME")
         }
