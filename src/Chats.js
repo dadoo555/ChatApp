@@ -325,53 +325,83 @@ const NewChatList = (props)=>{
     )
 }
 
+
+let scheduledUpdateId;
+
 // ............... Chats APP ...................
 const Chats = ()=>{
 
     const [chats, setChats] = useState([])
     const [msgs, setMsgs] = useState([])
     const [currentChat, setCurrentChat] = useState(undefined)
+
+    const currentChatRef = useRef(currentChat)
+    currentChatRef.current = currentChat
     const [currentUser, setCurrentUser] = useState(undefined)
+    const currentUserRef = useRef(currentUser)
+    currentUserRef.current = currentUser
+
     const [newMessage, setNewMessage] = useState(undefined)
     const [settingsMenu, setSettingsMenu] = useState(false)
     const [showNewChats, setShowNewChats] = useState(false)
     const [usersList, setUsersList] = useState([])
     const navigate = useNavigate()
-    
-    useEffect(() => { 
 
-        const updateChat = ()=>{
 
-            fetch('/chat/api/sessions/me')
-            .then(response=>{
-                if (response.ok){
-                    console.log('autorizado')
-                    return response.json()
-                } else {
-                    throw new Error('Unauthorized')
-                }
-            }).then((data)=>{
-                setCurrentUser(data.user)
-            }).then(()=>{
-                return fetch('/chat/api/chats')
-            }).then(res => {
-                return res.json()
-            }).then(data => {
-                setChats(data)
-                
-            }).catch(err =>{
-                if (err.message == 'Unauthorized'){
-                    navigate('/chat/login')
-                }
+    const initialized = useRef(false)
+
+
+    const loadMessagesForCurrentChat = (chat, user) => {
+        return fetch(`/chat/api/chats/${chat.id}/messages`)
+        .then(response => {
+            return response.json()
+        }).then(data =>{
+            setMsgs(data)
+        }).then(()=>{
+            return fetch(`/chat/api/chats/${chat.id}/messages/${user.id}/read`, {
+                method: 'PUT'    
             })
-        }
+        })
+    }
 
-        const autoUpdate = ()=>{ 
+    useEffect(() => { 
+        if(!initialized.current){
+            initialized.current = true
+            const updateChat = ()=>{
+
+                fetch('/chat/api/sessions/me')
+                .then(response=>{
+                    if (response.ok){
+                        console.log('autorizado')
+                        return response.json()
+                    } else {
+                        throw new Error('Unauthorized')
+                    }
+                }).then((data)=>{
+                    setCurrentUser(data.user)
+                }).then(()=>{
+                    return fetch('/chat/api/chats')
+                }).then(res => {
+                    return res.json()
+                }).then(data => {
+                    setChats(data)
+                    if(currentChatRef.current){
+                        loadMessagesForCurrentChat(currentChatRef.current, currentUserRef.current)
+                    }
+                }).then(() => {
+                    scheduledUpdateId = setTimeout(() => {
+                        clearTimeout(scheduledUpdateId)
+                        updateChat()
+                    }, 3000)
+                }).catch(err =>{
+                    if (err.message == 'Unauthorized'){
+                        navigate('/chat/login')
+                    }
+                })
+            }
             updateChat()
-            setTimeout(autoUpdate, 10000)
+            
         }
-        
-        const startAutoUpdate = autoUpdate()
         
     }, []);
 
@@ -467,18 +497,8 @@ const Chats = ()=>{
 
     const changeCurrentChat = (chat)=>{
         setCurrentChat(chat)
-        setNewMessage('')   
-        
-        fetch(`/chat/api/chats/${chat.id}/messages`)
-        .then(response => {
-            return response.json()
-        }).then(data =>{
-            setMsgs(data)
-        }).then(()=>{
-            return fetch(`/chat/api/chats/${chat.id}/messages/${currentUser.id}/read`, {
-                method: 'PUT'    
-            })
-        }).then((response)=>{
+        setNewMessage('')
+        loadMessagesForCurrentChat(chat, currentUser).then((response)=>{
             if (response.ok){
                 //update unread counter on chats state ..........
                 let newChats = [...chats]

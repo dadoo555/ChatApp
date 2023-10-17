@@ -33,7 +33,8 @@ module.exports = {
       new HtmlWebpackPlugin({
         title: 'Shape Tracker',
         template: './src/index.html',
-        inject: 'body'
+        inject: 'body',
+        publicPath: '/chat'
       })
     ],
     devServer: {

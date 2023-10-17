@@ -17,6 +17,7 @@
     "build": "webpack --mode development",
     "buildproduction": "webpack --mode production",
     "devStart": "nodemon server.js",
+    "watchFE": "nodemon -w ./src -x \"npm run build\" -e \".js\"",
     "start": "nodemon --exec babel-node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -2,6 +2,10 @@ const express = require('express')
 const router = express.Router()
 const connection = require('./db/db.js').connection
 
+const bodyParser = require('body-parser')
+const urlEncodedParser = bodyParser.urlencoded({ extended: false })
+router.use(urlEncodedParser)
+
 // .......... Session ........
 const {checkUser, sessionHandler, cookieParser} = require('./session.js')
 router.use(sessionHandler)
@@ -40,6 +44,34 @@ router.get('/users', (req,res)=>{
     }).catch(err=>{
         res.status(500).json({status: 'Error DB users list'})
     })
+})
+
+router.post('/users/new', (req,res)=>{
+    console.log(req.body)
+    const sqlUsers = `SELECT nickname FROM users`
+    const sqlQuery =    
+        `INSERT INTO users
+            (nickname, name, password, profile_picture, status)
+        VALUES
+            ('${req.body.data.nickname}','${req.body.data.name}','${req.body.data.password}','${req.body.data.picture.name}','Free to chat')`
+                 
+    connection.promise().query(sqlUsers).then((results)=>{
+        const [nicknames] = results
+        const matchedNickname = nicknames.find(each=> each.toUpperCase() === req.body.data.nickname.toUpperCase())
+        if(matchedNickname){
+            throw new Error("EXISTING_NICKNAME")
+        }
+        return connection.promise().query(sqlQuery)
+    }).then(()=>{
+        res.status(200).json({status: 'User register ok'})
+    }).catch((err)=>{
+        if(err.message === "EXISTING_NICKNAME"){
+            res.status(409).json({status: 'Nickname already used'})
+        }else {
+            res.status(500).json({status: 'Error register new user'})
+        }
+    })
+
 })
 
 router.get('/chats', checkUser,(req,res)=>{
@@ -95,15 +127,6 @@ router.post('/chats/new',(req,res)=>{
         res.status(500).json({status: 'Error add new chat: ' + err})
     })
 })
-
-// router.get('/chats/lastcreated', (req,res)=>{
-//     const sqlLastId = `SELECT last_insert_id() AS lastid;`
-//     connection.promise().query(sqlLastId).then((results)=>{
-//         res.status(200).json(results)
-//     }).catch(err=>{
-//         res.status(500).json({status: 'Error get last created id chat'})
-//     })
-// })
 
 router.get('/chats/:id/messages',(req,res)=>{
     
